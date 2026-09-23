@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'control-retiros-proveedores-v1';
 const SESSION_KEY = 'control-retiros-proveedores-session';
-const LOGIN_USER = 'admin';
-const LOGIN_PASSWORD = 'admin123';
+const DEFAULT_USER = 'admin';
+const DEFAULT_PASSWORD = 'admin123';
 
 const state = loadState();
 
@@ -11,15 +11,16 @@ const appShell = $('#appShell');
 const loginForm = $('#loginForm');
 const retiroForm = $('#retiroForm');
 const pagoForm = $('#pagoForm');
+const userForm = $('#userForm');
 
 const formatMoney = (value) => `Gs. ${Math.round(value || 0).toLocaleString('es-PY')}`;
 const normalizeProvider = (value) => value.trim().replace(/\s+/g, ' ');
 const byDate = (a, b) => (a.fecha || '').localeCompare(b.fecha || '');
 
 function loadState() {
-  const fallback = { settings: {}, retiros: [], pagos: [] };
+  const fallback = { settings: {}, retiros: [], pagos: [], users: [] };
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || fallback;
+    return { ...fallback, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) };
   } catch {
     return fallback;
   }
@@ -33,6 +34,26 @@ function formValues(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
 
+function ensureDefaultUser() {
+  if (!Array.isArray(state.users)) state.users = [];
+  if (state.users.length) return;
+  state.users.push(createUser(DEFAULT_USER, DEFAULT_PASSWORD));
+  saveState();
+}
+
+function createUser(username, password) {
+  return {
+    id: crypto.randomUUID(),
+    username: username.trim(),
+    password,
+    createdAt: new Date().toISOString().slice(0, 10)
+  };
+}
+
+function findUser(username) {
+  return state.users.find((user) => user.username.toLowerCase() === username.trim().toLowerCase());
+}
+
 function showApp(isLoggedIn) {
   loginScreen.hidden = isLoggedIn;
   appShell.hidden = !isLoggedIn;
@@ -41,10 +62,11 @@ function showApp(isLoggedIn) {
 loginForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const data = formValues(loginForm);
-  const isValid = data.usuario.trim() === LOGIN_USER && data.clave === LOGIN_PASSWORD;
+  const user = findUser(data.usuario);
+  const isValid = Boolean(user && user.password === data.clave);
   $('#loginError').hidden = isValid;
   if (!isValid) return;
-  sessionStorage.setItem(SESSION_KEY, '1');
+  sessionStorage.setItem(SESSION_KEY, user.username);
   loginForm.reset();
   showApp(true);
 });
@@ -53,6 +75,35 @@ $('#logout').addEventListener('click', () => {
   sessionStorage.removeItem(SESSION_KEY);
   showApp(false);
 });
+
+userForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const data = formValues(userForm);
+  const username = data.usuario.trim();
+
+  if (findUser(username)) {
+    showUserMessage('Ese usuario ya existe.', 'error');
+    return;
+  }
+
+  if (data.clave !== data.confirmar) {
+    showUserMessage('Las claves no coinciden.', 'error');
+    return;
+  }
+
+  state.users.push(createUser(username, data.clave));
+  saveState();
+  userForm.reset();
+  showUserMessage('Usuario creado correctamente.', 'success');
+  renderUsers();
+});
+
+function showUserMessage(text, type) {
+  const message = $('#userMessage');
+  message.textContent = text;
+  message.className = `form-message ${type}`;
+  message.hidden = false;
+}
 
 function setTodayDefaults() {
   const today = new Date().toISOString().slice(0, 10);
@@ -221,6 +272,16 @@ function render() {
   renderSemanal();
   renderRetiros();
   renderPagos();
+  renderUsers();
+}
+
+function renderUsers() {
+  renderRows('#usersBody', [...state.users].sort((a, b) => a.username.localeCompare(b.username)), 3, (user) => `
+    <tr>
+      <td>${escapeHtml(user.username)}</td>
+      <td>${user.createdAt || '-'}</td>
+      <td><button class="row-action" data-delete-user="${user.id}">Borrar</button></td>
+    </tr>`);
 }
 
 function renderResumen() {
@@ -285,9 +346,17 @@ function renderRows(selector, rows, colspan, template) {
 document.addEventListener('click', (event) => {
   const retiroId = event.target.dataset.deleteRetiro;
   const pagoId = event.target.dataset.deletePago;
+  const userId = event.target.dataset.deleteUser;
   if (retiroId) state.retiros = state.retiros.filter((item) => item.id !== retiroId);
   if (pagoId) state.pagos = state.pagos.filter((item) => item.id !== pagoId);
-  if (retiroId || pagoId) {
+  if (userId) {
+    if (state.users.length === 1) {
+      showUserMessage('Debe quedar al menos un usuario activo.', 'error');
+      return;
+    }
+    state.users = state.users.filter((user) => user.id !== userId);
+  }
+  if (retiroId || pagoId || userId) {
     saveState();
     render();
   }
@@ -302,7 +371,8 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+ensureDefaultUser();
 bindSettings();
 setTodayDefaults();
 render();
-showApp(sessionStorage.getItem(SESSION_KEY) === '1');
+showApp(Boolean(sessionStorage.getItem(SESSION_KEY)));
