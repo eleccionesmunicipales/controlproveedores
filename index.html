@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema de Control de Retiros de Proveedores</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="loginScreen" class="login-screen">
+    <form id="loginForm" class="login-card">
+      <p class="eyebrow">Acceso privado</p>
+      <h1>Iniciar sesion</h1>
+      <p class="login-help">Usuario inicial: <strong>admin</strong> | Clave: <strong>admin123</strong></p>
+      <label>Usuario
+        <input name="usuario" type="text" autocomplete="username" required>
+      </label>
+      <label>Clave
+        <input name="clave" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="loginError" class="login-error" hidden>Usuario o clave incorrectos.</p>
+      <button type="submit" class="primary">Entrar al sistema</button>
+    </form>
+  </section>
+
+  <div id="appShell" class="app-shell" hidden>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Control semanal, mensual y acumulado</p>
+      <h1>Retiros de proveedores</h1>
+      <p class="subtitle">Registra mercaderias, materiales o servicios retirados, pagos realizados y saldos pendientes.</p>
+    </div>
+    <div class="hero-card">
+      <span>Total pendiente</span>
+      <strong id="totalPendiente">Gs. 0</strong>
+      <small>Saldo anterior + retiros - pagos</small>
+      <button id="logout" type="button" class="logout">Cerrar sesion</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <h2>Datos generales</h2>
+      <div class="grid two">
+        <label>Responsable
+          <input id="responsableGeneral" type="text" placeholder="Nombre del responsable">
+        </label>
+        <label>Lugar / Area
+          <input id="lugar" type="text" placeholder="Deposito, obra, local...">
+        </label>
+        <label>Mes / Ano
+          <input id="mesAnio" type="month">
+        </label>
+        <label>Fecha de inicio
+          <input id="fechaInicio" type="date">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <div>
+          <h2>Registrar retiro</h2>
+          <p>Cada retiro queda asignado a un proveedor y semana.</p>
+        </div>
+      </div>
+      <form id="retiroForm" class="form-grid">
+        <label>Proveedor
+          <input name="proveedor" type="text" required placeholder="Ej: Ferreteria San Miguel">
+        </label>
+        <label>Telefono
+          <input name="telefono" type="text" placeholder="Opcional">
+        </label>
+        <label>Fecha
+          <input name="fecha" type="date" required>
+        </label>
+        <label>Semana Nro.
+          <input name="semana" type="number" min="1" max="53" required>
+        </label>
+        <label>Producto / concepto
+          <input name="concepto" type="text" required placeholder="Descripcion del retiro">
+        </label>
+        <label>Cantidad
+          <input name="cantidad" type="number" min="0" step="0.01" required>
+        </label>
+        <label>Unidad
+          <input name="unidad" type="text" placeholder="un, kg, m, caja...">
+        </label>
+        <label>Precio unitario
+          <input name="precio" type="number" min="0" step="1" required>
+        </label>
+        <label>Destino / actividad
+          <input name="destino" type="text" placeholder="Donde se uso">
+        </label>
+        <label>Responsable retiro
+          <input name="responsable" type="text" placeholder="Quien retiro">
+        </label>
+        <label>Firma / comprobante
+          <input name="comprobante" type="text" placeholder="Nro. recibo, firma, remision">
+        </label>
+        <button type="submit" class="primary">Guardar retiro</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <div>
+          <h2>Registrar pago / abono</h2>
+          <p>Los pagos descuentan el saldo pendiente del proveedor.</p>
+        </div>
+      </div>
+      <form id="pagoForm" class="form-grid compact">
+        <label>Fecha
+          <input name="fecha" type="date" required>
+        </label>
+        <label>Proveedor
+          <input name="proveedor" type="text" required>
+        </label>
+        <label>Monto pagado
+          <input name="monto" type="number" min="0" step="1" required>
+        </label>
+        <label>Forma de pago
+          <input name="forma" type="text" placeholder="Efectivo, transferencia...">
+        </label>
+        <label>Comprobante
+          <input name="comprobante" type="text" placeholder="Nro. comprobante">
+        </label>
+        <label>Observacion
+          <input name="observacion" type="text" placeholder="Detalle adicional">
+        </label>
+        <button type="submit" class="primary">Guardar pago</button>
+      </form>
+    </section>
+
+    <section class="panel wide">
+      <div class="section-title actions-title">
+        <div>
+          <h2>Resumen por proveedor</h2>
+          <p>Totales calculados automaticamente.</p>
+        </div>
+        <div class="actions">
+          <button id="exportCsv" type="button">Exportar CSV</button>
+          <button id="printPage" type="button">Imprimir</button>
+          <button id="clearData" type="button" class="danger">Borrar datos</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>Retiros</th>
+              <th>Pagos</th>
+              <th>Saldo pendiente</th>
+              <th>Ultimo movimiento</th>
+            </tr>
+          </thead>
+          <tbody id="resumenBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h2>Control semanal</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Semana</th>
+              <th>Proveedor</th>
+              <th>Retiros semana</th>
+              <th>Pagos semana</th>
+              <th>Saldo semana</th>
+            </tr>
+          </thead>
+          <tbody id="semanalBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h2>Registro de retiros</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Concepto</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Precio unit.</th>
+              <th>Total</th>
+              <th>Destino</th>
+              <th>Responsable</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="retirosBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h2>Registro de pagos</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Monto</th>
+              <th>Forma</th>
+              <th>Comprobante</th>
+              <th>Observacion</th>
+              <th>Saldo luego del pago</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pagosBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <template id="emptyRowTemplate">
+    <tr><td colspan="10" class="empty">Todavia no hay datos cargados.</td></tr>
+  </template>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
