@@ -20,7 +20,7 @@ body {
   color: var(--ink);
 }
 
-.app-shell[hidden], .login-screen[hidden] { display: none; }
+.app-shell[hidden], .login-screen[hidden], .layout[hidden], .admin-nav[hidden] { display: none; }
 
 .login-screen {
   min-height: 100vh;
@@ -96,6 +96,19 @@ h2 { margin-bottom: 12px; }
 .logout {
   width: 100%;
   margin-top: 14px;
+  color: #fff;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.28);
+}
+
+.admin-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.admin-nav button {
   color: #fff;
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.28);

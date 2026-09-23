@@ -8,6 +8,9 @@ const state = loadState();
 const $ = (selector) => document.querySelector(selector);
 const loginScreen = $('#loginScreen');
 const appShell = $('#appShell');
+const controlView = $('#controlView');
+const usersView = $('#usersView');
+const adminNav = $('#adminNav');
 const loginForm = $('#loginForm');
 const retiroForm = $('#retiroForm');
 const pagoForm = $('#pagoForm');
@@ -55,8 +58,29 @@ function findUser(username) {
 }
 
 function showApp(isLoggedIn) {
+  const user = isLoggedIn ? currentUser() : null;
+  if (isLoggedIn && !user) {
+    sessionStorage.removeItem(SESSION_KEY);
+    isLoggedIn = false;
+  }
   loginScreen.hidden = isLoggedIn;
   appShell.hidden = !isLoggedIn;
+  if (isLoggedIn) {
+    const isAdmin = user?.username === DEFAULT_USER;
+    adminNav.hidden = !isAdmin;
+    showView('control');
+  }
+}
+
+function showView(view) {
+  const isAdmin = currentUser()?.username === DEFAULT_USER;
+  controlView.hidden = view !== 'control';
+  usersView.hidden = !isAdmin || view !== 'users';
+}
+
+function currentUser() {
+  const username = sessionStorage.getItem(SESSION_KEY);
+  return username ? findUser(username) : null;
 }
 
 loginForm.addEventListener('submit', (event) => {
@@ -76,8 +100,12 @@ $('#logout').addEventListener('click', () => {
   showApp(false);
 });
 
+$('#showControlView').addEventListener('click', () => showView('control'));
+$('#showUsersView').addEventListener('click', () => showView('users'));
+
 userForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  if (currentUser()?.username !== DEFAULT_USER) return;
   const data = formValues(userForm);
   const username = data.usuario.trim();
 
@@ -276,9 +304,10 @@ function render() {
 }
 
 function renderUsers() {
-  renderRows('#usersBody', [...state.users].sort((a, b) => a.username.localeCompare(b.username)), 3, (user) => `
+  renderRows('#usersBody', [...state.users].sort((a, b) => a.username.localeCompare(b.username)), 4, (user) => `
     <tr>
       <td>${escapeHtml(user.username)}</td>
+      <td>${escapeHtml(user.password)}</td>
       <td>${user.createdAt || '-'}</td>
       <td><button class="row-action" data-delete-user="${user.id}">Borrar</button></td>
     </tr>`);
@@ -350,6 +379,7 @@ document.addEventListener('click', (event) => {
   if (retiroId) state.retiros = state.retiros.filter((item) => item.id !== retiroId);
   if (pagoId) state.pagos = state.pagos.filter((item) => item.id !== pagoId);
   if (userId) {
+    if (currentUser()?.username !== DEFAULT_USER) return;
     if (state.users.length === 1) {
       showUserMessage('Debe quedar al menos un usuario activo.', 'error');
       return;

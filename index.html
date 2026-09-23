@@ -34,11 +34,15 @@
       <span>Total pendiente</span>
       <strong id="totalPendiente">Gs. 0</strong>
       <small>Saldo anterior + retiros - pagos</small>
+      <div id="adminNav" class="admin-nav" hidden>
+        <button id="showControlView" type="button">Control</button>
+        <button id="showUsersView" type="button">Usuarios</button>
+      </div>
       <button id="logout" type="button" class="logout">Cerrar sesion</button>
     </div>
   </header>
 
-  <main class="layout">
+  <main id="controlView" class="layout">
     <section class="panel controls">
       <h2>Datos generales</h2>
       <div class="grid two">
@@ -133,40 +137,6 @@
     </section>
 
     <section class="panel wide">
-      <div class="section-title">
-        <div>
-          <h2>Usuarios</h2>
-          <p>Crea nuevos accesos para iniciar sesion en esta computadora.</p>
-        </div>
-      </div>
-      <form id="userForm" class="form-grid user-form">
-        <label>Nuevo usuario
-          <input name="usuario" type="text" autocomplete="off" required placeholder="Ej: encargado">
-        </label>
-        <label>Clave
-          <input name="clave" type="password" autocomplete="new-password" required minlength="4" placeholder="Minimo 4 caracteres">
-        </label>
-        <label>Confirmar clave
-          <input name="confirmar" type="password" autocomplete="new-password" required minlength="4">
-        </label>
-        <button type="submit" class="primary">Crear usuario</button>
-      </form>
-      <p id="userMessage" class="form-message" hidden></p>
-      <div class="table-wrap user-table-wrap">
-        <table class="users-table">
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Creado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="usersBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel wide">
       <div class="section-title actions-title">
         <div>
           <h2>Resumen por proveedor</h2>
@@ -252,6 +222,43 @@
             </tr>
           </thead>
           <tbody id="pagosBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <main id="usersView" class="layout" hidden>
+    <section class="panel wide">
+      <div class="section-title">
+        <div>
+          <h2>Usuarios</h2>
+          <p>Crea nuevos accesos. Esta vista solo esta disponible para admin.</p>
+        </div>
+      </div>
+      <form id="userForm" class="form-grid user-form">
+        <label>Nuevo usuario
+          <input name="usuario" type="text" autocomplete="off" required placeholder="Ej: encargado">
+        </label>
+        <label>Clave
+          <input name="clave" type="password" autocomplete="new-password" required minlength="4" placeholder="Minimo 4 caracteres">
+        </label>
+        <label>Confirmar clave
+          <input name="confirmar" type="password" autocomplete="new-password" required minlength="4">
+        </label>
+        <button type="submit" class="primary">Crear usuario</button>
+      </form>
+      <p id="userMessage" class="form-message" hidden></p>
+      <div class="table-wrap user-table-wrap">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Contrasena</th>
+              <th>Creado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
         </table>
       </div>
     </section>
